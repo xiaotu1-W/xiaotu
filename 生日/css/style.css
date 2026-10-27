@@ -1,0 +1,1546 @@
+/* ============================================================
+ * 生日纪念页面 · 样式（Hello Kitty 可爱温柔风 · 第二版）
+ * ------------------------------------------------------------
+ * 分层思路：
+ *   1) Tailwind CSS 负责布局骨架（栅格 / 间距 / 响应式断点）
+ *   2) 本文件负责「氛围层」：浅粉 + 奶白 + 浅奶黄渐变、极淡纸纹、
+ *      线条 Hello Kitty 装饰、弹窗动画节奏、深色模式色板
+ * 所有颜色都走 CSS 变量，深色模式只换变量、不重写布局，
+ * 保证深浅两套主题色调统一、都不刺眼。
+ *
+ * 第二版改动要点：
+ *   - 由「整页长滚动」改为「首页封面 + 入口卡片 + 弹窗面板」
+ *   - 漂浮元素：蝴蝶结 + 小星星（不再使用爱心）
+ *   - 新增：弹窗（letter / notes / gallery / ending）、照片仓库网格
+ *   - 保留：加载过渡、滚动淡入、音乐开关、深色模式、减少动态效果
+ * ============================================================ */
+
+/* ---------- 1. 色板（浅色：Hello Kitty） ---------- */
+:root {
+  color-scheme: light;
+
+  /* 背景三段渐变：奶白 → 浅粉 → 浅奶黄 */
+  --bg-1: #fffaf6;          /* 奶白 */
+  --bg-2: #fdeef2;          /* 浅粉 */
+  --bg-3: #fcf4dc;          /* 浅奶黄 */
+  --bg-tint: #ffe9ef;       /* 粉雾 */
+
+  --ink: #6b5b58;           /* 正文：暖粉灰 */
+  --ink-soft: #9b8482;      /* 次要文字 */
+  --ink-faint: #bfa8a6;     /* 更弱的文字 */
+  --title: #5c4a48;         /* 大标题 */
+
+  --cream: #fffdfb;         /* 奶白卡片、拍立得白边 */
+  --cream-2: #fff5f7;       /* 次级奶白粉 */
+  --line: rgba(214, 168, 176, 0.32);
+
+  --pink: #f2b6c4;          /* 主粉：蝴蝶结 */
+  --pink-soft: rgba(246, 199, 210, 0.45);
+  --pink-deep: #d98a9e;     /* 深一点的粉：图标、强调线 */
+  --pink-mute: #f6c7d2;
+  --yellow: #f6e2a8;        /* 浅奶黄 */
+  --yellow-soft: rgba(248, 231, 177, 0.5);
+
+  --glow-pink: rgba(248, 196, 210, 0.55);
+  --glow-yellow: rgba(250, 232, 180, 0.55);
+  --glow-white: rgba(255, 255, 255, 0.8);
+
+  --paper-shadow: 0 22px 50px -30px rgba(190, 130, 148, 0.45), 0 2px 10px rgba(190, 130, 148, 0.06);
+  --card-shadow: 0 18px 40px -24px rgba(200, 140, 158, 0.4), 0 2px 8px rgba(200, 140, 158, 0.05);
+  --polaroid-shadow: 0 20px 40px -24px rgba(180, 120, 140, 0.5), 0 3px 10px rgba(180, 120, 140, 0.07);
+  --paper-grain: 0.045;
+
+  /* 缓动：慢起慢收，可爱但克制 */
+  --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-pop: cubic-bezier(0.18, 0.72, 0.24, 1);  /* 弹窗「轻轻弹出来」 */
+  --dur-slow: 1500ms;
+
+  /* 页面左右留白（手机端两侧的呼吸空间） */
+  --gutter: 1.5rem;
+}
+
+/* ---------- 2. 深色模式色板（跟随系统，柔雾紫粉，低对比） ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --bg-1: #1f1a1d;
+    --bg-2: #251d22;
+    --bg-3: #211c19;
+    --bg-tint: #2a2026;
+
+    --ink: #e3d3d3;
+    --ink-soft: #bda6a8;
+    --ink-faint: #8f7a7d;
+    --title: #f2e2e2;
+
+    --cream: #2b2226;
+    --cream-2: #31252a;
+    --line: rgba(240, 200, 210, 0.14);
+
+    --pink: #d99aac;
+    --pink-soft: rgba(217, 154, 172, 0.16);
+    --pink-deep: #c98297;
+    --pink-mute: #6e4f5a;
+    --yellow: #c9b47e;
+    --yellow-soft: rgba(201, 180, 126, 0.14);
+
+    --glow-pink: rgba(214, 140, 160, 0.16);
+    --glow-yellow: rgba(210, 180, 120, 0.1);
+    --glow-white: rgba(255, 255, 255, 0.04);
+
+    --paper-shadow: 0 24px 54px -30px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --card-shadow: 0 20px 44px -26px rgba(0, 0, 0, 0.85), 0 2px 8px rgba(0, 0, 0, 0.25);
+    --polaroid-shadow: 0 22px 46px -24px rgba(0, 0, 0, 0.9), 0 3px 12px rgba(0, 0, 0, 0.3);
+    --paper-grain: 0.03;
+  }
+}
+
+/* ---------- 3. 基础排版 ---------- */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  background: var(--bg-2);
+  /* 数字和英文用圆润一点的字体 */
+  font-family: "PingFang SC", "HarmonyOS Sans SC", "Hiragino Sans GB", "Noto Sans SC",
+               "Microsoft YaHei UI", "Microsoft YaHei", -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--pink-soft);
+  color: var(--title);
+}
+
+/* 键盘可达性：只在键盘聚焦时显示焦点环 */
+:focus-visible {
+  outline: 2px solid var(--pink-deep);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* 渐隐滚动条（桌面端更克制），手机端不自带样式 */
+@media (min-width: 1024px) {
+  html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+}
+
+/* ---------- 4. 背景层：粉白黄渐变柔光 + 极淡纸纹 ---------- */
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 18% 8%, var(--glow-pink) 0%, transparent 62%),
+    radial-gradient(60% 50% at 88% 18%, var(--glow-yellow) 0%, transparent 60%),
+    radial-gradient(80% 60% at 50% 105%, var(--glow-pink) 0%, transparent 65%),
+    linear-gradient(165deg, var(--bg-1) 0%, var(--bg-2) 48%, var(--bg-3) 100%);
+  background-attachment: fixed;
+}
+
+/* 极淡纸纹：内联 SVG feTurbulence，零额外请求，几乎看不见但更软 */
+.grain {
+  position: fixed;
+  inset: -10%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: var(--paper-grain);
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  will-change: transform;
+  animation: grain-drift 28s steps(6) infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+  .grain { mix-blend-mode: screen; }
+}
+
+@keyframes grain-drift {
+  0%   { transform: translate3d(0, 0, 0); }
+  20%  { transform: translate3d(-2%, 1%, 0); }
+  40%  { transform: translate3d(1%, -2%, 0); }
+  60%  { transform: translate3d(-1%, 2%, 0); }
+  80%  { transform: translate3d(2%, -1%, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* 内容层永远浮在背景和纸纹之上 */
+.page-content { position: relative; z-index: 2; }
+
+/* ---------- 5. 装饰：线条 Hello Kitty / 蝴蝶结 / 小圆点 ---------- */
+.deco-svg {
+  display: block;
+  overflow: visible;
+}
+
+/* 蝴蝶结轻微摇摆（标题下方装饰用） */
+.bow-wiggle {
+  transform-origin: 50% 100%;
+  animation: bow-sway 7s ease-in-out infinite;
+}
+
+/* 所有线条装饰统一用 currentColor，颜色由父级 color 控制 */
+.kitty-line,
+.kitty-head {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kitty-fill {
+  fill: var(--cream);
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+
+/* 蝴蝶结：淡粉填充 + 细边，干净不花哨 */
+.kitty-bow,
+.kitty-fill.kitty-bow {
+  fill: var(--pink-soft);
+  stroke: var(--pink-deep);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-opacity: 0.8;
+}
+
+.bow-fill { fill: var(--pink-soft); stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+
+@keyframes bow-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+
+/* 小圆点装饰（纯 CSS，不占图片） */
+.dot-row {
+  display: inline-flex;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.dot-row i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pink);
+  opacity: 0.55;
+}
+
+.dot-row i:nth-child(3n + 2) { background: var(--yellow); opacity: 0.7; }
+
+/* ---------- 6. 加载过渡 ----------
+ * #loader 覆盖在最上层，等 Tailwind 编译完成后再缓慢淡出，
+ * 实现「温柔地掀开幕布」的效果。中间是一只简笔 Hello Kitty 头像。
+ */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(170deg, var(--bg-1), var(--bg-2) 60%, var(--bg-3));
+  transition: opacity 1400ms var(--ease-soft), visibility 1400ms;
+}
+
+#loader.is-done {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.loader-inner {
+  display: grid;
+  justify-items: center;
+  gap: 1.1rem;
+}
+
+.loader-kitty {
+  width: 76px;
+  height: 66px;
+  color: var(--pink-deep);
+  opacity: 0.75;
+  animation: loader-breathe 3.4s ease-in-out infinite;
+}
+
+.loader-mark {
+  font-size: 0.72rem;
+  letter-spacing: 0.5em;
+  color: var(--ink-faint);
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes loader-breathe {
+  0%, 100% { transform: scale(1);    opacity: 0.6; }
+  50%      { transform: scale(1.03); opacity: 0.9; }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.85; }
+}
+
+/* 加载完成前锁定滚动 */
+body:not(.is-ready) { overflow: hidden; }
+
+/* 首页主体整体柔和上浮 */
+.home {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: clamp(1.6rem, 4vw, 3rem) var(--gutter) calc(1.6rem + env(safe-area-inset-bottom));
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 1500ms var(--ease-soft), transform 1500ms var(--ease-soft);
+}
+
+body.is-ready .home {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- 7. 淡入（IntersectionObserver 驱动） ---------- */
+/* 默认：元素从下方轻轻浮现（入口卡片、封面上的普通块） */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(5px);
+  transition:
+    opacity var(--dur-slow) var(--ease-soft),
+    transform var(--dur-slow) var(--ease-soft),
+    filter var(--dur-slow) var(--ease-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+/* 拍立得：自己带随机旋转（--tilt），所以只做透明度和模糊过渡，
+   不参与位移，避免两层 transform 互相覆盖 */
+.polaroid-item[data-reveal] {
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.polaroid-item[data-reveal].is-visible {
+  transform: rotate(var(--tilt, 0deg));
+}
+
+/* ---------- 8. 首页：封面 + 入口卡片 ---------- */
+/* 首页布局见上方 .home（同样需要柔和上浮，所以合并在一起写） */
+
+/* 柔和光斑 */
+.cover-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(70px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 星星 / 蝴蝶结漂浮层 */
+.float-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.float-item {
+  position: absolute;
+  color: var(--pink-deep);
+  animation-name: float-drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+.float-item.star { color: var(--yellow); }
+.float-item.bow  { color: var(--pink); }
+.float-item.dot  {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pink);
+}
+
+@keyframes float-drift {
+  0%   { transform: translate3d(0, 0, 0) rotate(var(--r, 0deg)) scale(1); opacity: var(--o, 0.2); }
+  25%  { transform: translate3d(12px, -18px, 0) rotate(calc(var(--r, 0deg) + 7deg)) scale(1.05); opacity: calc(var(--o, 0.2) * 1.3); }
+  50%  { transform: translate3d(-8px, -34px, 0) rotate(calc(var(--r, 0deg) - 5deg)) scale(0.97); opacity: var(--o, 0.2); }
+  75%  { transform: translate3d(-16px, -14px, 0) rotate(calc(var(--r, 0deg) + 4deg)) scale(1.03); opacity: calc(var(--o, 0.2) * 0.8); }
+  100% { transform: translate3d(0, 0, 0) rotate(var(--r, 0deg)) scale(1); opacity: var(--o, 0.2); }
+}
+
+/* 首页内容居中区 */
+.home-main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.6rem, 4vw, 2.4rem);
+  padding: 1rem 0;
+}
+
+/* 小 Kitty 头像（封面 C 位） */
+.hero-kitty {
+  color: var(--pink-deep);
+  width: clamp(92px, 24vw, 132px);
+  height: auto;
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  transition: opacity 1600ms var(--ease-soft) 120ms, transform 1600ms var(--ease-soft) 120ms;
+}
+
+body.is-ready .hero-kitty { opacity: 1; transform: none; }
+
+.hero-kitty .kitty-line,
+.hero-kitty .kitty-head { stroke-width: 1.9; }
+
+.hero-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 1600ms var(--ease-soft) 300ms;
+}
+
+body.is-ready .hero-eyebrow { opacity: 1; }
+
+/* 标题下方的蝴蝶结 + 小圆点装饰线 */
+.hero-ornament {
+  width: clamp(160px, 46vw, 240px);
+  height: auto;
+  color: var(--pink);
+  opacity: 0;
+  transition: opacity 1700ms var(--ease-soft) 800ms;
+}
+
+body.is-ready .hero-ornament { opacity: 1; }
+
+/* 大标题：每个字依次淡入 */
+.home-title {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: clamp(2.4rem, 9.5vw, 4.4rem);
+  line-height: 1.3;
+  font-weight: 200;
+  letter-spacing: 0.24em;
+  color: var(--title);
+  margin: 0;
+}
+
+.home-title span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(7px);
+  transition: opacity 1700ms var(--ease-soft), transform 1700ms var(--ease-soft), filter 1700ms var(--ease-soft);
+  transition-delay: var(--d, 0ms);
+}
+
+body.is-ready .home-title span {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+.home-sub {
+  font-size: clamp(0.84rem, 2.6vw, 0.96rem);
+  line-height: 2.1;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1700ms var(--ease-soft) 1100ms, transform 1700ms var(--ease-soft) 1100ms;
+}
+
+body.is-ready .home-sub { opacity: 1; transform: none; }
+
+/* ---------- 9. 入口卡片 ----------
+ * 手机：单列、两侧留白
+ * 平板（≥640px）：2 列
+ * 电脑（≥1024px）：一行 4 张，铺满内容宽度
+ */
+.entry-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.8rem;
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+}
+
+/* 相册（照片仓库）是重点入口：手机端也占满整行 */
+.entry-grid > .entry-card:first-child { grid-column: 1 / -1; }
+
+@media (min-width: 640px) {
+  .entry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    max-width: 44rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .entry-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+    max-width: 76rem;
+  }
+  .entry-grid > .entry-card:first-child { grid-column: auto; }
+}
+
+@media (min-width: 1536px) {
+  .entry-grid { max-width: 86rem; }
+}
+
+.entry-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  border-radius: 1.4rem;
+  border: 1px solid var(--line);
+  background: var(--cream);
+  background: color-mix(in srgb, var(--cream) 82%, transparent);
+  box-shadow: var(--card-shadow);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 700ms var(--ease-soft), box-shadow 700ms var(--ease-soft),
+              border-color 700ms var(--ease-soft), background 700ms var(--ease-soft);
+}
+
+/* 卡片左侧：线条小图标 */
+.entry-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 1rem;
+  color: var(--pink-deep);
+  background: var(--pink-soft);
+  transition: background 700ms var(--ease-soft), transform 700ms var(--ease-soft);
+}
+
+.entry-icon svg { width: 1.4rem; height: 1.4rem; }
+
+.entry-text { min-width: 0; flex: 1; }
+
+.entry-name {
+  display: block;
+  font-size: 0.98rem;
+  letter-spacing: 0.16em;
+  color: var(--title);
+  line-height: 1.6;
+}
+
+.entry-desc {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 卡片右下角的小圆点 + 箭头 */
+.entry-arrow {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--ink-faint);
+  transition: transform 700ms var(--ease-soft), color 700ms var(--ease-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .entry-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--pink);
+    box-shadow: 0 26px 50px -28px rgba(200, 140, 158, 0.55), 0 2px 10px rgba(200, 140, 158, 0.08);
+  }
+  .entry-card:hover .entry-icon { background: var(--yellow-soft); transform: rotate(-4deg); }
+  .entry-card:hover .entry-arrow { transform: translateX(3px); color: var(--pink-deep); }
+}
+
+.entry-card:active { transform: scale(0.985); }
+
+/* 桌面端：卡片改成竖向排列，更像一张小卡片 */
+@media (min-width: 1024px) {
+  .entry-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 1.35rem 1.25rem 1.2rem;
+    border-radius: 1.6rem;
+    min-height: 10.5rem;
+  }
+  .entry-icon { width: 3.2rem; height: 3.2rem; }
+  .entry-desc { white-space: normal; }
+  .entry-arrow { position: absolute; right: 1.15rem; top: 1.3rem; }
+}
+
+/* 首页底部：蝴蝶结分割线 + NFC 提示 */
+.home-footer {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  padding-top: 1.4rem;
+  opacity: 0;
+  transition: opacity 1800ms var(--ease-soft) 1500ms;
+}
+
+body.is-ready .home-footer { opacity: 1; }
+
+/* 手机端底部空间比较紧：适当压缩间隔，保证首页一屏放得下 */
+@media (max-width: 639px) {
+  .home-main { gap: 1.1rem; padding: 0.5rem 0; }
+  .home-footer { padding-top: 1rem; gap: 0.6rem; }
+  .home-footer .dot-row { display: none; }
+}
+
+.nfc-note {
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+/* ---------- 10. 弹窗（入口卡片点开的面板） ----------
+ * 结构：.sheet > .sheet-panel > (header + body + footer)
+ * 手机端：底部抽屉式，占据 92vh，内部独立滚动
+ * 电脑端：居中面板，最大宽度 64rem / 72rem（相册更宽）
+ */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 520ms var(--ease-soft), visibility 520ms;
+}
+
+.sheet.is-open { opacity: 1; visibility: visible; }
+
+/* 遮罩：柔和的粉白雾，不黑不刺眼 */
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(92, 66, 74, 0.28);
+  background: color-mix(in srgb, var(--title) 26%, transparent);
+  backdrop-filter: blur(6px) saturate(0.92);
+  -webkit-backdrop-filter: blur(6px) saturate(0.92);
+}
+
+.sheet-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 92vh;
+  max-height: 92svh;
+  border-radius: 1.8rem 1.8rem 0 0;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--cream);
+  box-shadow: 0 -20px 60px -30px rgba(150, 100, 118, 0.5);
+  transform: translateY(36px) scale(0.995);
+  opacity: 0;
+  transition: transform 620ms var(--ease-pop), opacity 520ms var(--ease-soft);
+  overflow: hidden;
+}
+
+.sheet.is-open .sheet-panel {
+  transform: none;
+  opacity: 1;
+}
+
+/* 面板顶部的小把手（提示可以下滑关闭） */
+.sheet-handle {
+  width: 2.6rem;
+  height: 4px;
+  margin: 0.6rem auto 0;
+  border-radius: 999px;
+  background: var(--line);
+  flex: none;
+}
+
+.sheet-header {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 1.1rem 0.9rem 1.4rem;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--cream-2), var(--cream));
+}
+
+.sheet-eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.sheet-title {
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.05rem, 3.6vw, 1.25rem);
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  color: var(--title);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 标题旁的小蝴蝶结：轻微摇摆 */
+.sheet-title .bow-wiggle { width: 1.15rem; height: 1.15rem; color: var(--pink); }
+
+.sheet-sub {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+}
+
+.sheet-close {
+  flex: none;
+  margin-left: auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--cream);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 500ms var(--ease-soft), color 500ms var(--ease-soft), transform 500ms var(--ease-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheet-close:hover { background: var(--pink-soft); color: var(--pink-deep); transform: rotate(90deg); }
+
+.sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.4rem 1.2rem 2rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+@media (min-width: 1024px) {
+  .sheet {
+    align-items: center;
+    padding: 2.5rem;
+  }
+  .sheet-panel {
+    max-width: 64rem;
+    max-height: min(86vh, 56rem);
+    border-radius: 1.9rem;
+    border-bottom: 1px solid var(--line);
+    transform: translateY(14px) scale(0.985);
+    box-shadow: 0 40px 90px -40px rgba(150, 100, 118, 0.55);
+  }
+  .sheet-handle { display: none; }
+  .sheet-header { padding: 1.3rem 1.6rem 1.1rem 1.9rem; }
+  .sheet-body { padding: 2rem 2.2rem 2.6rem; }
+}
+
+/* 相册弹窗在电脑端更宽，用来放大量照片 */
+@media (min-width: 1024px) {
+  .sheet--wide .sheet-panel { max-width: 76rem; }
+}
+
+@media (min-width: 1536px) {
+  .sheet--wide .sheet-panel { max-width: 88rem; }
+}
+
+/* 弹窗关闭按钮在手机端更大一点，方便点 */
+@media (max-width: 639px) {
+  .sheet-close { width: 2.6rem; height: 2.6rem; }
+}
+
+/* ---------- 11. 书信弹窗 ---------- */
+.letter-paper {
+  position: relative;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2rem 1.4rem 1.8rem;
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(120% 90% at 10% 0%, rgba(255, 255, 255, 0.65), transparent 55%),
+    var(--cream);
+  border: 1px solid var(--line);
+  box-shadow: var(--paper-shadow);
+}
+
+@media (min-width: 640px) {
+  .letter-paper { padding: 2.8rem 2.6rem 2.4rem; }
+}
+
+/* 信纸四角的小圆点，替代旧版的横线纹，更干净 */
+.letter-paper::before {
+  content: "";
+  position: absolute;
+  inset: 0.9rem;
+  border-radius: 1.1rem;
+  border: 1px dashed var(--line);
+  pointer-events: none;
+}
+
+.letter-text {
+  font-size: 0.95rem;
+  line-height: 2.35;       /* 宽松行距，适合长段落 */
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  text-indent: 2em;
+  margin: 0 0 1.15rem;
+}
+
+.letter-text:last-child { margin-bottom: 0; }
+
+.letter-name {
+  font-size: 0.98rem;
+  letter-spacing: 0.12em;
+  color: var(--title);
+  margin: 0 0 1.2rem;
+  text-indent: 0;
+}
+
+.letter-to {
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+  margin: 0 0 1.6rem;
+}
+
+.letter-sign {
+  font-size: 0.88rem;
+  letter-spacing: 0.14em;
+  line-height: 2.2;
+  text-align: right;
+  margin: 0;
+  color: var(--ink);
+}
+
+.letter-sign-block { margin-top: 2.2rem; }
+
+/* ---------- 12. 碎碎念便签 ---------- */
+.note-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .note-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
+}
+
+@media (min-width: 1100px) {
+  .note-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.note-card {
+  position: relative;
+  padding: 1.35rem 1.25rem 1.3rem;
+  border-radius: 0.4rem 1.2rem 0.5rem 1.2rem;
+  background: var(--note-bg, var(--cream-2));
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 34px -28px rgba(190, 120, 140, 0.6);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 900ms var(--ease-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .note-card:hover { transform: rotate(0deg) translateY(-3px); }
+}
+
+/* 便签顶部的小蝴蝶结，取代原来的圆点 */
+.note-card::before {
+  content: "";
+  position: absolute;
+  top: -0.55rem;
+  left: 1.4rem;
+  width: 0.85rem;
+  height: 0.6rem;
+  background:
+    radial-gradient(circle at 50% 50%, var(--pink-deep) 0 1.6px, transparent 2px),
+    linear-gradient(90deg, var(--pink) 0 40%, transparent 40% 60%, var(--pink) 60% 100%);
+  opacity: 0.55;
+  clip-path: polygon(0 0, 42% 22%, 42% 78%, 0 100%, 58% 100%, 58% 78%, 100% 100%, 100% 0, 58% 22%, 58% 0);
+}
+
+.note-index {
+  font-size: 0.6rem;
+  letter-spacing: 0.38em;
+  color: var(--ink-faint);
+  margin: 0 0 0.5rem;
+}
+
+.note-text {
+  font-size: 0.9rem;
+  line-height: 1.95;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* ---------- 13. 照片仓库（弹窗内大量拍立得） ----------
+ * 手机：单列留白
+ * 平板（≥560px）：2 列
+ * 电脑（≥1024px）：3~4 列
+ * 照片数量多时：先显示一批，底部「再翻几页」渐进加载，避免一次渲染太多卡顿
+ */
+.gallery-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 1.3rem;
+}
+
+.gallery-count {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+}
+
+.gallery-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.gallery-jump button {
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 400ms var(--ease-soft), border-color 400ms var(--ease-soft), color 400ms var(--ease-soft);
+}
+
+.gallery-jump button:hover,
+.gallery-jump button.is-active {
+  border-color: var(--pink);
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem 1rem;
+  justify-items: center;
+}
+
+/* 手机端：单列 + 两侧留白 */
+.gallery-grid > .polaroid-item { width: min(100%, 21rem); }
+
+@media (min-width: 560px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.6rem 1rem;
+    justify-items: stretch;
+  }
+  .gallery-grid > .polaroid-item { width: 100%; }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem 1.4rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .gallery-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2.2rem 1.5rem;
+  }
+}
+
+/* 拍立得卡片 */
+.polaroid-item {
+  position: relative;
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 900ms var(--ease-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .polaroid-item:hover { transform: rotate(0deg) translateY(-4px); }
+}
+
+.polaroid {
+  position: relative;
+  width: 100%;
+  padding: 0.62rem 0.62rem 0;
+  background: var(--cream);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--polaroid-shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+  .polaroid { border-color: rgba(255, 235, 240, 0.06); }
+}
+
+/* 胶带：顶部一小段半透明纸胶，粉黄色很淡 */
+.polaroid-tape {
+  position: absolute;
+  top: -0.55rem;
+  left: 50%;
+  width: 3.6rem;
+  height: 1.1rem;
+  transform: translateX(-50%) rotate(-2.5deg);
+  background: linear-gradient(180deg, var(--yellow-soft), var(--pink-soft));
+  border-left: 1px dashed rgba(255, 255, 255, 0.45);
+  border-right: 1px dashed rgba(255, 255, 255, 0.45);
+  box-shadow: 0 2px 6px rgba(190, 130, 148, 0.12);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* 照片框：固定 4:5 比例，object-fit: cover，永远不溢出屏幕 */
+.photo-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--cream-2);
+  cursor: zoom-in;
+  border: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  /* 尚未淡入时先占好位置，图片加载后由 .is-loaded 触发柔和过渡 */
+}
+
+/* 手机端单列时比例略方一点，一张卡大约占大半屏，滑动更舒服 */
+@media (max-width: 559px) {
+  .photo-frame { aspect-ratio: 4 / 4.6; }
+}
+
+.photo-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+  /* 柔光：略降饱和、略降对比，让不同手机的照片放在一起也统一 */
+  filter: saturate(0.92) contrast(0.97) brightness(1.02);
+  transition: transform 1200ms var(--ease-soft), opacity 800ms var(--ease-soft);
+  opacity: 0;
+}
+
+.photo-frame img.is-loaded { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .photo-frame:hover img { transform: scale(1.03); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .photo-frame img { filter: saturate(0.85) contrast(0.93) brightness(0.88); }
+}
+
+/* 占位图：图片缺失或加载中时显示柔和渐变，不出现破图 */
+.photo-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  align-content: center;
+  background:
+    radial-gradient(90% 70% at 30% 20%, rgba(255, 255, 255, 0.85), transparent 60%),
+    linear-gradient(150deg, var(--bg-2), #fbe6ec 55%, #fdf3d9);
+  color: var(--ink-faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.32em;
+  text-align: center;
+  padding: 1rem;
+  transition: opacity 800ms var(--ease-soft);
+}
+
+.photo-placeholder svg { width: 2.4rem; height: 2.1rem; opacity: 0.6; }
+
+.photo-placeholder em {
+  font-style: normal;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  opacity: 0.8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .photo-placeholder {
+    background:
+      radial-gradient(90% 70% at 30% 20%, rgba(120, 90, 105, 0.45), transparent 60%),
+      linear-gradient(150deg, #2d2328, #2a2026 55%, #2a251d);
+    color: var(--ink-faint);
+  }
+}
+
+.photo-frame.has-image .photo-placeholder { opacity: 0; }
+
+/* 照片下方一行备注 */
+.polaroid-caption {
+  display: block;
+  min-height: 3.6rem;
+  padding: 0.55rem 0.3rem 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  text-align: center;
+  font-weight: 300;
+}
+
+/* 渐进加载按钮 */
+.gallery-more {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  margin-top: 2rem;
+}
+
+.gallery-more button {
+  padding: 0.65rem 1.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--pink);
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: background 500ms var(--ease-soft), transform 500ms var(--ease-soft);
+}
+
+.gallery-more button:hover { background: var(--yellow-soft); transform: translateY(-1px); }
+
+.gallery-more p { margin: 0; font-size: 0.68rem; letter-spacing: 0.2em; color: var(--ink-faint); }
+
+/* 空状态 */
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.8rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+}
+
+.empty-state svg { width: 3rem; height: 3rem; opacity: 0.45; }
+
+/* ---------- 14. 彩蛋弹窗（线条蛋糕） ---------- */
+.ending {
+  position: relative;
+  text-align: center;
+  overflow: hidden;
+}
+
+.cake-stage {
+  position: relative;
+  width: min(100%, 20rem);
+  margin: 0 auto;
+}
+
+.cake-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* 蛋糕线条：描边逐渐画出 */
+.cake-svg .draw {
+  fill: none;
+  stroke: var(--pink-deep);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: var(--len, 400);
+  stroke-dashoffset: var(--len, 400);
+  opacity: 0.85;
+}
+
+.cake-svg .fill-soft {
+  fill: var(--pink-soft);
+  stroke: none;
+  opacity: 0;
+  transition: opacity 2200ms var(--ease-soft) 800ms;
+}
+
+/* 打开彩蛋弹窗后：蛋糕从下往上缓缓升起 */
+.cake-wrap {
+  opacity: 0;
+  transform: translateY(50px) scale(0.97);
+  transition: opacity 1800ms var(--ease-soft), transform 2000ms var(--ease-soft);
+}
+
+.ending.is-celebrated .cake-wrap {
+  opacity: 1;
+  transform: none;
+}
+
+.ending.is-celebrated .cake-svg .draw {
+  transition: stroke-dashoffset 2400ms var(--ease-soft);
+  stroke-dashoffset: 0;
+}
+
+.ending.is-celebrated .cake-svg .fill-soft { opacity: 1; }
+
+/* 蛋糕上方散开的细碎星光（只播放一次，非常轻） */
+.sparkles {
+  position: absolute;
+  inset: -10% -10% auto -10%;
+  height: 70%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--pink);
+  opacity: 0;
+  box-shadow: 0 0 6px 1px var(--pink-soft);
+}
+
+/* 一半的小点是奶黄色，像星星糖 */
+.sparkle:nth-child(2n) { background: var(--yellow); }
+
+.ending.is-celebrated .sparkle {
+  animation: sparkle-rise var(--dur, 6s) ease-out var(--delay, 0s) 1 forwards;
+}
+
+@keyframes sparkle-rise {
+  0%   { opacity: 0; transform: translate3d(0, 0, 0) scale(0.6); }
+  18%  { opacity: 0.55; }
+  100% { opacity: 0; transform: translate3d(var(--dx, 0px), var(--dy, -110px), 0) scale(0.3); }
+}
+
+.ending-wish {
+  font-size: clamp(0.98rem, 3vw, 1.1rem);
+  letter-spacing: 0.2em;
+  color: var(--title);
+  margin: 1.6rem 0 0;
+}
+
+.hairline {
+  width: min(100%, 16rem);
+  height: 1px;
+  margin: 2rem auto 1.4rem;
+  background: linear-gradient(90deg, transparent, var(--line), transparent);
+}
+
+.ending-sign {
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  margin: 0.2rem 0;
+}
+
+.ending .dot-row { margin-top: 1.2rem; }
+
+/* ---------- 15. 全屏大图预览（照片仓库内点击单张） ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  /* 深一点的粉灰遮罩，仍是暖调，不刺眼 */
+  background: rgba(58, 40, 46, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 600ms var(--ease-soft), visibility 600ms;
+  color: #fdeef2;
+}
+
+.lightbox.is-open { opacity: 1; visibility: visible; }
+
+.lightbox-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  color: rgba(253, 238, 242, 0.6);
+}
+
+.lightbox-close {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(253, 238, 242, 0.2);
+  background: transparent;
+  color: rgba(253, 238, 242, 0.8);
+  cursor: pointer;
+  transition: background 450ms var(--ease-soft), color 450ms var(--ease-soft);
+}
+
+.lightbox-close:hover { background: rgba(253, 238, 242, 0.1); color: #fff; }
+
+.lightbox-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0.5rem 0.75rem;
+  min-height: 0;
+  cursor: zoom-out;   /* 点击空白处关闭 */
+}
+
+.lightbox-figure {
+  position: relative;
+  margin: 0;
+  max-width: 100%;
+  max-height: 100%;
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.lightbox-figure img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 12rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 6px solid rgba(255, 253, 251, 0.92);   /* 白色相纸边 */
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+  background: #2b2226;
+  opacity: 0;
+  transform: scale(0.985);
+  transition: opacity 600ms var(--ease-soft), transform 800ms var(--ease-soft);
+  filter: saturate(0.94) contrast(0.97);
+}
+
+.lightbox.is-open .lightbox-figure img { opacity: 1; transform: none; }
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(253, 238, 242, 0.18);
+  background: rgba(60, 42, 48, 0.55);
+  color: rgba(253, 238, 242, 0.85);
+  cursor: pointer;
+  transition: background 450ms var(--ease-soft);
+  z-index: 2;
+}
+
+.lightbox-nav:hover { background: rgba(60, 42, 48, 0.85); }
+.lightbox-nav.prev { left: max(0.6rem, env(safe-area-inset-left)); }
+.lightbox-nav.next { right: max(0.6rem, env(safe-area-inset-right)); }
+
+.lightbox-bottom {
+  padding: 0.75rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom));
+  text-align: center;
+}
+
+.lightbox-caption {
+  min-height: 1.6em;
+  font-size: 0.86rem;
+  letter-spacing: 0.14em;
+  color: rgba(253, 238, 242, 0.88);
+  margin: 0 0 0.35rem;
+}
+
+.lightbox-counter {
+  font-size: 0.68rem;
+  letter-spacing: 0.32em;
+  color: rgba(253, 238, 242, 0.45);
+  margin: 0;
+}
+
+@media (min-width: 1024px) {
+  .lightbox-figure img { max-height: calc(100vh - 14rem); }
+  .lightbox-nav { width: 3.2rem; height: 3.2rem; }
+  .lightbox-nav.prev { left: 2rem; }
+  .lightbox-nav.next { right: 2rem; }
+}
+
+/* 预览打开时锁定页面滚动（由 JS 统一管理 body.is-locked） */
+body.is-locked { overflow: hidden; }
+
+/* ---------- 16. 音乐按钮（右下角，不自动播放） ---------- */
+.music-btn {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--cream);
+  background: color-mix(in srgb, var(--cream) 80%, transparent);
+  color: var(--ink-soft);
+  box-shadow: 0 12px 30px -18px rgba(190, 130, 148, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: transform 550ms var(--ease-soft), background 550ms var(--ease-soft), color 550ms var(--ease-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.music-btn:hover { transform: translateY(-2px); color: var(--pink-deep); }
+
+.music-btn svg { width: 1.1rem; height: 1.1rem; }
+
+/* 播放中：一圈非常缓慢旋转的细虚线 */
+.music-btn::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 1px dashed var(--pink);
+  opacity: 0;
+  transition: opacity 800ms var(--ease-soft);
+}
+
+.music-btn[data-playing="true"]::after {
+  opacity: 0.5;
+  animation: slow-spin 20s linear infinite;
+}
+
+.music-btn[data-playing="true"] { color: var(--pink-deep); }
+
+.music-btn[hidden] { display: none; }
+
+@keyframes slow-spin { to { transform: rotate(360deg); } }
+
+/* 音乐提示 */
+.music-tip {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  z-index: 60;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  background: var(--cream);
+  background: color-mix(in srgb, var(--cream) 85%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 1200ms var(--ease-soft), transform 1200ms var(--ease-soft);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+.music-tip.is-shown { opacity: 0.9; transform: none; }
+
+@media (min-width: 1024px) {
+  .music-btn { width: 3.4rem; height: 3.4rem; right: 2rem; bottom: 2rem; }
+  .music-tip { right: 2rem; bottom: 5.8rem; }
+}
+
+/* ---------- 17. 减少动态效果偏好 ----------
+ * 尊重系统「减少动态效果」：去掉漂浮、摇摆等持续动画，
+ * 弹窗直接出现，只保留最基础的淡入。
+ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  [data-reveal] { opacity: 1; transform: none; filter: none; }
+  .polaroid-item[data-reveal] { transform: rotate(var(--tilt, 0deg)); }
+  .float-item { display: none; }
+  .home, .home-footer { opacity: 1; transform: none; }
+  .home-title span, .home-sub, .hero-kitty, .hero-eyebrow, .hero-ornament,
+  .sheet-panel, .bow-wiggle {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  /* 减少动态效果时，彩蛋直接呈现最终状态 */
+  .cake-wrap { opacity: 1; transform: none; }
+  .cake-svg .draw { stroke-dashoffset: 0; }
+  .ending .sparkle { display: none; }
+}
+
+/* ---------- 18. 打印（小彩蛋：可以把信直接打印出来） ---------- */
+@media print {
+  .music-btn, .music-tip, .lightbox, #loader, .grain,
+  .page-bg, .float-layer, .sheet { display: none !important; }
+  body { color: #000; background: #fff; }
+  .home { display: block; }
+}

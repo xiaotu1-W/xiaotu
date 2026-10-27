@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>生成占位图片 · 本地小工具</title>
+  <style>
+    body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #fdeef2; color: #5c4a48; margin: 0; padding: 32px 20px; }
+    .wrap { max-width: 760px; margin: 0 auto; }
+    h1 { font-weight: 400; letter-spacing: .2em; font-size: 1.15rem; }
+    p { font-size: .85rem; line-height: 1.9; color: #9b8482; }
+    textarea { width: 100%; height: 140px; box-sizing: border-box; border: 1px solid #f2b6c4; border-radius: 12px; padding: 12px; font-family: inherit; font-size: .8rem; background: #fffdfb; color: #6b5b58; }
+    button { margin-top: 12px; padding: 10px 22px; border-radius: 999px; border: 1px solid #f2b6c4; background: #fffdfb; color: #d98a9e; letter-spacing: .15em; cursor: pointer; font-size: .8rem; }
+    button:hover { background: #ffe9ef; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 16px; margin-top: 24px; }
+    .card { background: #fffdfb; padding: 8px 8px 14px; box-shadow: 0 12px 30px -18px rgba(180,120,140,.6); text-align: center; }
+    .card img { width: 100%; display: block; }
+    .card span { font-size: .7rem; color: #9b8482; display: block; margin-top: 6px; }
+    code { background: #f6e2a8; padding: 1px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>生成占位图片</h1>
+    <p>
+      本页面只在你电脑上本地运行，用于快速生成粉白色占位图片。每行写一个备注，
+      点击按钮后会依次下载 <code>photo-01.jpg</code> … 到浏览器下载文件夹。
+      把它们移动到项目的 <code>images/</code> 文件夹，替换成真实照片即可。
+      （生成后可以删掉 tools 文件夹，它不参与线上页面。）
+    </p>
+    <textarea id="input">那天风很轻，你笑得很好看
+下午三点的光，落在你的肩上
+一起走过的街角，路灯刚刚亮起
+这一杯，敬我们的好天气
+海边的发呆时刻，不许别人打扰
+偷偷拍下的你，是最好看的角度
+一起看过的落日，比图片更暖
+下次还要一起去这里</textarea>
+    <br />
+    <button id="go" type="button">生成并下载</button>
+    <div class="grid" id="preview"></div>
+  </div>
+
+  <script>
+    /* 生成一张 800x1000 的占位图：粉白渐变 + 相机线稿 + 序号与备注 */
+    function draw(lines) {
+      const list = lines.map((s) => s.trim()).filter(Boolean);
+      if (!list.length) return;
+
+      list.forEach((note, i) => {
+        const c = document.createElement('canvas');
+        c.width = 800;
+        c.height = 1000;
+        const g = c.getContext('2d');
+
+        // 渐变底色：奶白 → 浅粉 → 浅奶黄
+        const grad = g.createLinearGradient(0, 0, 800, 1000);
+        grad.addColorStop(0, '#fffaf6');
+        grad.addColorStop(0.55, '#fbe6ec');
+        grad.addColorStop(1, '#fdf3d9');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 800, 1000);
+
+        // 柔光
+        const glow = g.createRadialGradient(260, 220, 20, 260, 220, 640);
+        glow.addColorStop(0, 'rgba(255,255,255,0.9)');
+        glow.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = glow;
+        g.fillRect(0, 0, 800, 1000);
+
+        // 相机线稿
+        g.strokeStyle = 'rgba(217,138,158,0.55)';
+        g.lineWidth = 4;
+        g.beginPath();
+        g.roundRect(280, 400, 240, 180, 18);
+        g.stroke();
+        g.beginPath();
+        g.arc(400, 490, 52, 0, Math.PI * 2);
+        g.stroke();
+        g.beginPath();
+        g.arc(400, 490, 20, 0, Math.PI * 2);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(330, 400);
+        g.lineTo(345, 375);
+        g.lineTo(390, 375);
+        g.lineTo(405, 400);
+        g.stroke();
+
+        // 序号
+        g.fillStyle = 'rgba(155,132,130,0.75)';
+        g.font = '300 30px "PingFang SC", "Microsoft YaHei", sans-serif';
+        g.textAlign = 'center';
+        g.fillText('NO.' + String(i + 1).padStart(2, '0'), 400, 650);
+
+        // 备注（换行）
+        g.font = '300 26px "PingFang SC", "Microsoft YaHei", sans-serif';
+        g.fillStyle = 'rgba(155,132,130,0.6)';
+        const words = note.split('');
+        const perLine = 16;
+        for (let k = 0; k < Math.ceil(words.length / perLine); k++) {
+          g.fillText(words.slice(k * perLine, (k + 1) * perLine).join(''), 400, 720 + k * 42);
+        }
+
+        const dataUrl = c.toDataURL('image/jpeg', 0.9);
+
+        // 预览
+        const card = document.createElement('div');
+        card.className = 'card';
+        const img = new Image();
+        img.src = dataUrl;
+        card.appendChild(img);
+        const cap = document.createElement('span');
+        cap.textContent = 'photo-' + String(i + 1).padStart(2, '0') + '.jpg';
+        card.appendChild(cap);
+        document.getElementById('preview').appendChild(card);
+
+        // 下载
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'photo-' + String(i + 1).padStart(2, '0') + '.jpg';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      });
+    }
+
+    document.getElementById('go').addEventListener('click', () => {
+      document.getElementById('preview').innerHTML = '';
+      draw(document.getElementById('input').value.split('\n'));
+    });
+  </script>
+</body>
+</html>

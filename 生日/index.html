@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <!-- 手机端按设备宽度渲染，是「手机 / 平板 / 电脑」自适应布局的前提 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>生日快乐 · 专属小盒子</title>
+  <meta name="description" content="一只粉粉的小盒子：一封信、一堆照片、一些碎碎念，还有藏在最后的小彩蛋。" />
+  <meta name="theme-color" content="#fffaf6" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#1f1a1d" media="(prefers-color-scheme: dark)" />
+  <!-- 分享卡片（微信 / iMessage 里贴链接时显示） -->
+  <meta property="og:title" content="生日快乐 · 专属小盒子" />
+  <meta property="og:description" content="轻触这张卡片，收下属于你的那一点点温柔。" />
+  <meta property="og:type" content="website" />
+
+  <!-- 浏览器标签上的小蝴蝶结 favicon（内联 SVG，无额外文件） -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%23f2b6c4'%3E%3Cellipse cx='9' cy='16' rx='6' ry='7' transform='rotate(-18 9 16)'/%3E%3Cellipse cx='23' cy='16' rx='6' ry='7' transform='rotate(18 23 16)'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23d98a9e'/%3E%3C/svg%3E" />
+
+  <!-- ========== 1. Tailwind CSS（浏览器版，无需构建） ==========
+       用法与官方 Play CDN 一致：直接在 class 里写 Tailwind 工具类。
+       想提升加载速度，可以改成编译好的本地 CSS（详见 README「常见问题」）。 -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- ========== 2. 页面氛围样式（先于 Tailwind 生效，保证渐变底色不会闪白） ========== -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- ========== 3. 字体：纤细圆润的无衬线 ==========
+       不额外下载网络字体（避免加载慢、首屏抖动），
+       优先使用系统自带的 PingFang SC / HarmonyOS Sans / 微软雅黑 UI 等，
+       具体字族在 css/style.css 的 body 中定义。 -->
+
+  <!-- ========== 4. 所有文字内容都在 config.js 里改 ========== -->
+  <script src="config.js"></script>
+  <script src="js/app.js"></script>
+</head>
+
+<body class="antialiased">
+
+  <!-- ================= 加载过渡层 ================= -->
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <!-- 线条 Hello Kitty 头像（白色脸、蝴蝶结只有线条） -->
+      <svg class="deco-svg loader-kitty" viewBox="0 0 120 104" aria-hidden="true">
+        <path class="kitty-line" d="M28 40c-8-6-14-14-9-22 4-6 13-3 17 4 6-3 12-4 18-4h4c6 0 12 1 18 4 4-7 13-10 17-4 5 8-1 16-9 22-2 16-16 28-38 28S30 56 28 40z" />
+        <ellipse class="kitty-line" cx="47" cy="44" rx="2.6" ry="3.4" />
+        <ellipse class="kitty-line" cx="73" cy="44" rx="2.6" ry="3.4" />
+        <ellipse class="kitty-line" cx="60" cy="51" rx="3.6" ry="2.6" />
+        <path class="kitty-line" d="M31 46l-9 5M31 51l-8 9M89 46l9 5M89 51l8 9" />
+        <g class="kitty-bow">
+          <ellipse cx="92" cy="27" rx="9" ry="6.5" transform="rotate(-22 92 27)" />
+          <ellipse cx="108" cy="27" rx="9" ry="6.5" transform="rotate(22 108 27)" />
+          <circle cx="100" cy="27" r="3.2" />
+        </g>
+      </svg>
+      <span class="loader-mark">HAPPY BIRTHDAY</span>
+    </div>
+  </div>
+
+  <!-- ================= 背景：粉白黄渐变 + 极淡纸纹 ================= -->
+  <div class="page-bg" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- ================= 右下角音乐按钮（不自动播放，点击后开始） ================= -->
+  <div id="musicTip" class="music-tip" aria-hidden="true">点一下，有声音</div>
+  <button id="musicBtn" class="music-btn" type="button" aria-label="播放背景音乐" aria-pressed="false" data-playing="false">
+    <!-- 图标由 JS 根据播放状态切换 -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9 18V6.5l10-2V16" />
+      <circle cx="6.6" cy="18" r="2.6" />
+      <circle cx="16.6" cy="16" r="2.6" />
+    </svg>
+  </button>
+
+  <main class="page-content">
+
+    <!-- ============================================================
+         首页：封面 + 入口卡片
+         ============================================================ -->
+    <section class="home" id="home" aria-label="首页">
+
+      <!-- 漂浮层：蝴蝶结 + 小星星 + 小圆点（由 JS 生成，低透明度、缓慢漂浮） -->
+      <div class="float-layer" id="floatLayer" aria-hidden="true"></div>
+
+      <!-- 柔和光斑 -->
+      <div class="cover-glow" aria-hidden="true"
+           style="width: 24rem; height: 24rem; left: 50%; top: 6%; transform: translateX(-50%); background: var(--glow-pink);"></div>
+      <div class="cover-glow" aria-hidden="true"
+           style="width: 16rem; height: 16rem; right: -3rem; top: 32%; background: var(--glow-yellow);"></div>
+      <div class="cover-glow" aria-hidden="true"
+           style="width: 14rem; height: 14rem; left: -3rem; bottom: 10%; background: var(--glow-white);"></div>
+
+      <div class="home-main">
+
+        <!-- 小 Kitty 头像（封面 C 位） -->
+        <svg class="deco-svg hero-kitty" id="heroKitty" viewBox="0 0 120 104" role="img" aria-label="线条 Hello Kitty 头像"></svg>
+
+        <p class="hero-eyebrow" id="coverEyebrow">for my dearest</p>
+
+        <!-- 大标题「生日快乐」，每个字依次淡入 -->
+        <h1 class="home-title" id="homeTitle" aria-label="生日快乐"></h1>
+
+        <!-- 标题两侧的线条蝴蝶结 + 小圆点 -->
+        <svg class="deco-svg hero-ornament" data-home-ornament viewBox="0 0 260 30" aria-hidden="true">
+          <g class="bow-wiggle" style="transform-box: fill-box;">
+            <ellipse class="bow-fill" cx="74" cy="15" rx="9.5" ry="7" transform="rotate(-18 74 15)" />
+            <ellipse class="bow-fill" cx="92" cy="15" rx="9.5" ry="7" transform="rotate(18 92 15)" />
+            <circle cx="83" cy="15" r="3.4" fill="var(--pink-deep)" opacity=".7" />
+          </g>
+          <g fill="var(--pink)" opacity=".55">
+            <circle cx="110" cy="15" r="2.6" />
+            <circle cx="122" cy="15" r="2.2" fill="var(--yellow)" opacity=".95" />
+            <circle cx="134" cy="15" r="2.6" />
+            <circle cx="146" cy="15" r="2.2" fill="var(--yellow)" opacity=".95" />
+            <circle cx="158" cy="15" r="2.6" />
+          </g>
+          <g class="bow-wiggle" style="transform-box: fill-box; animation-delay: -3.5s;">
+            <ellipse class="bow-fill" cx="177" cy="15" rx="9.5" ry="7" transform="rotate(-18 177 15)" />
+            <ellipse class="bow-fill" cx="195" cy="15" rx="9.5" ry="7" transform="rotate(18 195 15)" />
+            <circle cx="186" cy="15" r="3.4" fill="var(--pink-deep)" opacity=".7" />
+          </g>
+        </svg>
+
+        <p class="home-sub mx-auto max-w-md text-center" id="homeSub"></p>
+      </div>
+
+      <!-- 入口卡片：由 JS 根据 config.js 的 entries 生成 -->
+      <nav class="entry-grid" id="entryGrid" aria-label="入口"></nav>
+
+      <!-- 首页底部：NFC 提示 + 小圆点 -->
+      <footer class="home-footer" aria-label="底部提示">
+        <span class="dot-row" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <p class="nfc-note px-4" id="nfcNote"></p>
+      </footer>
+    </section>
+  </main>
+
+  <!-- ============================================================
+       弹窗 1：照片仓库（拍立得相册）
+       ============================================================ -->
+  <div class="sheet sheet--wide" id="sheet-gallery" data-sheet="gallery" role="dialog" aria-modal="true"
+       aria-labelledby="title-gallery" aria-hidden="true">
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel">
+      <span class="sheet-handle" aria-hidden="true"></span>
+      <header class="sheet-header">
+        <div>
+          <p class="sheet-eyebrow">photo box</p>
+          <h2 class="sheet-title" id="title-gallery">
+            照片仓库
+            <svg class="deco-svg bow-wiggle" viewBox="0 0 40 30" aria-hidden="true" style="color: var(--pink);">
+              <g class="bow-fill"><ellipse cx="11" cy="15" rx="9.5" ry="7" transform="rotate(-18 11 15)" /><ellipse cx="29" cy="15" rx="9.5" ry="7" transform="rotate(18 29 15)" /></g>
+              <circle cx="20" cy="15" r="3.4" fill="var(--pink-deep)" opacity=".75" />
+            </svg>
+          </h2>
+          <p class="sheet-sub">轻轻点开一张，可以看大图</p>
+        </div>
+        <button class="sheet-close" type="button" data-close aria-label="关闭照片仓库">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </header>
+      <div class="sheet-body" id="galleryBody">
+        <div class="gallery-toolbar">
+          <span class="gallery-count" id="galleryCount"></span>
+          <div class="gallery-jump" id="galleryJump" aria-label="快速翻页"></div>
+        </div>
+        <!-- 拍立得卡片由 JS 生成；数量多时分批加载 -->
+        <div class="gallery-grid" id="galleryGrid"></div>
+        <div class="gallery-more" id="galleryMore"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       弹窗 2：书信寄语
+       ============================================================ -->
+  <div class="sheet" id="sheet-letter" data-sheet="letter" role="dialog" aria-modal="true"
+       aria-labelledby="title-letter" aria-hidden="true">
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel">
+      <span class="sheet-handle" aria-hidden="true"></span>
+      <header class="sheet-header">
+        <div>
+          <p class="sheet-eyebrow">a letter</p>
+          <h2 class="sheet-title" id="title-letter">写给你的一封信</h2>
+          <p class="sheet-sub">慢慢读，不着急</p>
+        </div>
+        <button class="sheet-close" type="button" data-close aria-label="关闭书信">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </header>
+      <div class="sheet-body">
+        <article class="letter-paper">
+          <p class="letter-to" id="letterTo"></p>
+          <p class="letter-name" id="letterName"></p>
+          <div id="letterBody"></div>
+          <div class="letter-sign-block">
+            <p class="letter-sign" id="letterDate"></p>
+            <p class="letter-sign" id="letterSign"></p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       弹窗 3：碎碎念
+       ============================================================ -->
+  <div class="sheet" id="sheet-notes" data-sheet="notes" role="dialog" aria-modal="true"
+       aria-labelledby="title-notes" aria-hidden="true">
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel">
+      <span class="sheet-handle" aria-hidden="true"></span>
+      <header class="sheet-header">
+        <div>
+          <p class="sheet-eyebrow">little notes</p>
+          <h2 class="sheet-title" id="title-notes">碎碎念</h2>
+          <p class="sheet-sub">一些关于你的小事情</p>
+        </div>
+        <button class="sheet-close" type="button" data-close aria-label="关闭碎碎念">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </header>
+      <div class="sheet-body">
+        <div class="note-grid" id="noteGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       弹窗 4：彩蛋（线条蛋糕升起 + 星光散开）
+       ============================================================ -->
+  <div class="sheet" id="sheet-ending" data-sheet="ending" role="dialog" aria-modal="true"
+       aria-labelledby="title-ending" aria-hidden="true">
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel">
+      <span class="sheet-handle" aria-hidden="true"></span>
+      <header class="sheet-header">
+        <div>
+          <p class="sheet-eyebrow">surprise</p>
+          <h2 class="sheet-title" id="title-ending">拆开看看</h2>
+          <p class="sheet-sub">最后一点点心意</p>
+        </div>
+        <button class="sheet-close" type="button" data-close aria-label="关闭彩蛋">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </header>
+      <div class="sheet-body">
+        <div class="ending" id="endingPanel">
+          <div class="cake-stage">
+            <div class="sparkles" id="cakeSparkles" aria-hidden="true"></div>
+            <div class="cake-wrap">
+              <!-- 简约线条蛋糕：两层蛋糕 + 奶油波浪 + 三支细蜡烛 -->
+              <svg class="cake-svg" viewBox="0 0 320 300" role="img" aria-label="一个线条画的小蛋糕">
+                <!-- 蜡烛与火苗 -->
+                <path class="draw" d="M128 118V84" />
+                <path class="draw" d="M160 118V76" />
+                <path class="draw" d="M192 118V86" />
+                <path class="draw fill-soft" d="M128 84c-5-7 0-12 0-16 4 5 7 9 0 16z" />
+                <path class="draw fill-soft" d="M160 76c-5-8 0-13 0-18 4 6 8 10 0 18z" />
+                <path class="draw fill-soft" d="M192 86c-5-7 0-12 0-16 4 5 7 9 0 16z" />
+                <!-- 上层蛋糕 -->
+                <path class="draw" d="M96 150h128v34H96z" />
+                <!-- 上层奶油波浪 -->
+                <path class="draw" d="M96 132c8 0 8 8 16 8s8-8 16-8 8 8 16 8 8-8 16-8 8 8 16 8 8-8 16-8 8 8 16 8 8-8 16-8v18H96z" />
+                <!-- 下层蛋糕 -->
+                <path class="draw" d="M64 196h192v42H64z" />
+                <path class="draw" d="M64 184c10 0 10 8 20 8s10-8 20-8 10 8 20 8 10-8 20-8 10 8 20 8 10-8 20-8 10 8 20 8 10-8 20-8 10 8 20 8 10-8 20-8v12H64z" />
+                <!-- 糖珠：小圆点 -->
+                <path class="draw" d="M108 166h0M142 168h0M176 165h0M206 168h0" />
+                <path class="draw" d="M88 214h0M120 218h0M160 214h0M200 218h0M232 214h0" />
+                <!-- 桌面线 -->
+                <path class="draw" d="M36 238h248" />
+              </svg>
+            </div>
+          </div>
+
+          <p class="ending-wish" id="endingWish"></p>
+          <div class="hairline" aria-hidden="true"></div>
+          <p class="ending-sign" id="endingFrom"></p>
+          <p class="ending-sign" id="endingTo"></p>
+          <span class="dot-row" style="display:flex; justify-content:center;" aria-hidden="true"><i></i><i></i><i></i></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 全屏大图预览（照片仓库里点开单张） ================= -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="照片预览" aria-hidden="true">
+    <div class="lightbox-top">
+      <span>PHOTO</span>
+      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="关闭预览">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="lightbox-stage" id="lightboxStage">
+      <button class="lightbox-nav prev" id="lightboxPrev" type="button" aria-label="上一张">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 5 8 12l6.5 7" />
+        </svg>
+      </button>
+      <figure class="lightbox-figure">
+        <img id="lightboxImg" alt="" />
+      </figure>
+      <button class="lightbox-nav next" id="lightboxNext" type="button" aria-label="下一张">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9.5 5 16 12l-6.5 7" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="lightbox-bottom">
+      <p class="lightbox-caption" id="lightboxCaption"></p>
+      <p class="lightbox-counter" id="lightboxCounter"></p>
+    </div>
+  </div>
+
+</body>
+</html>
