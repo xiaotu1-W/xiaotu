@@ -1,0 +1,29 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: oj
+      MYSQL_USER: oj
+      MYSQL_PASSWORD: oj_dev_password
+      MYSQL_ROOT_PASSWORD: root_dev_password
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes: ["mysql_data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_dev_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  web:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: mysql+pymysql://oj:oj_dev_password@db:3306/oj?charset=utf8mb4
+      JWT_SECRET: replace-this-with-a-long-random-secret
+      RUNNER_TIMEOUT_SECONDS: "3"
+      RUNNER_MEMORY_MB: "128"
+    volumes: ["judge_tmp:/tmp"]
+    depends_on:
+      db: {condition: service_healthy}
+volumes:
+  mysql_data:
+  judge_tmp:
