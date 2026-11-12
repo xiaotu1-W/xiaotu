@@ -1,0 +1,14 @@
+# 核心仿真（无界面批量实验只需要 numpy）
+numpy>=1.24
+
+# 可视化桌面端（Pygame 渲染）
+pygame>=2.5
+
+# 图表导出
+matplotlib>=3.6
+
+# MySQL 持久化（可选：不安装时自动降级为 SQLite）
+PyMySQL>=1.1
+
+# Web 控制面板
+Flask>=2.3
